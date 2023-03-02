@@ -64,7 +64,7 @@ jobs:
 
     - name: Get MPI (Linux)
       run: |
-        sudo apt-get install mpich libmpich-dev
+        sudo apt-get install mpich libmpich-dev liblapack-dev libblas-dev
 
     - name: Get & install hypre
       run: |
@@ -88,11 +88,13 @@ jobs:
     - name: Run build-wrapper
       run: |
         cd mfem && \
+        mkdir build && \
+        cd build && \
         cmake \
           -DMFEM_USE_MPI=ON \
           -DMFEM_USE_LAPACK=ON \
-          -B build
-        cmake --build build/ --parallel
+          .. && \
+        make -j $(nproc --all)
     
     # - name: Run sonar-scanner
     #   env:
