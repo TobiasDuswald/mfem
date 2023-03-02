@@ -64,7 +64,7 @@ jobs:
 
     - name: Get MPI (Linux)
       run: |
-        sudo apt-get install mpich libmpich-dev liblapack-dev libblas-dev
+        sudo apt-get install mpich libmpich-dev liblapack-dev libblas-dev ninja-build
 
     - name: Get & install hypre
       run: |
@@ -88,7 +88,7 @@ jobs:
     - name: Run build-wrapper
       run: |
         cd mfem && \
-        cmake \
+        cmake -G Ninja \
           -DMFEM_USE_MPI=ON \
           -DMFEM_USE_LAPACK=ON \
           -B build && \
