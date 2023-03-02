@@ -1,0 +1,71 @@
+# Copyright (c) 2010-2022, Lawrence Livermore National Security, LLC. Produced
+# at the Lawrence Livermore National Laboratory. All Rights reserved. See files
+# LICENSE and NOTICE for details. LLNL-CODE-806117.
+#
+# This file is part of the MFEM library. For more information and source code
+# availability visit https://mfem.org.
+#
+# MFEM is free software; you can redistribute it and/or modify it under the
+# terms of the BSD-3 license. We welcome feedback and contributions, see file
+# CONTRIBUTING.md for details.
+
+name: Sonar Source Analysis
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    name: Sonar Source Analysis
+    runs-on: ubuntu-20.04
+    env:
+      SONAR_SCANNER_VERSION: 4.6.1.2450 # Find the latest version in the "Linux" link on this page:
+                                        # https://sonarcloud.io/documentation/analysis/scan/sonarscanner/
+      SONAR_SERVER_URL: "https://sonarcloud.io"
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
+
+    - name: checkout MFEM
+      uses: actions/checkout@v3
+      with:
+        path: mfem
+        with:
+        fetch-depth: 0
+
+    - name: Get MPI (Linux)
+      run: |
+        sudo apt-get install mpich libmpich-dev
+
+    - name: Get & install hypre
+      run: |
+        cd ~ && \
+        git clone https://github.com/hypre-space/hypre.git && \
+        cd hypre/src && \
+        mkdir build && \
+        cd build && \
+        cmake .. && \
+        make -j $(nproc --all) && \
+        sudo make install
+
+    - name: Install Metis
+      run : |
+        cd ~ && \
+        wget http://cern.ch/biodynamo-lfs/third-party/metis-5.1.0.tar && \
+        tar -xf metis-5.1.0.tar && \
+        cd metis-5.1.0 && \
+        make config shared=0 cc=gcc cxx=g++ && \
+        make && \
+        sudo make install
+
+    # MFEM build and test
+    - name: build-mfem
+      run: |
+        cd mfem && \
+        mkdir build && \
+        cd build && \
+        cmake -DMFEM_USE_MPI=ON -DMFEM_USE_LAPACK=ON .. && \
+        make -j $(nproc --all) && \
+        sudo make install
+
