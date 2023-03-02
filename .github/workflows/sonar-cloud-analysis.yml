@@ -56,13 +56,21 @@ jobs:
         make && \
         sudo make install
 
-    # MFEM build and test
-    - name: build-mfem
+    - name: Install sonar-scanner and build-wrapper
+      uses: SonarSource/sonarcloud-github-c-cpp@v1
+    
+    - name: Run build-wrapper
       run: |
         cd mfem && \
-        mkdir build && \
-        cd build && \
-        cmake -DMFEM_USE_MPI=ON -DMFEM_USE_LAPACK=ON .. && \
-        make -j $(nproc --all) && \
-        sudo make install
-
+        cmake \
+          -DMFEM_USE_MPI=ON \
+          -DMFEM_USE_LAPACK=ON \
+          -B build
+        build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --parallel
+    
+    - name: Run sonar-scanner
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        sonar-scanner --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}"
